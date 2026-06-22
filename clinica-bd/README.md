@@ -1,284 +1,81 @@
-# 🏥 Clínica Médica — Banco de Dados
+🏥 Clínica Médica — Banco de Dados
 
-> Banco de dados relacional para sistema de gerenciamento de clínica médica.
-> Desenvolvido com **PostgreSQL 15**, rodando via **Docker**.
+Sistema de banco de dados relacional para gerenciamento de uma clínica médica, desenvolvido com PostgreSQL 15 como projeto da disciplina de Desenvolvimento Web — 2º Bimestre 2026.
 
----
 
-## 📁 Estrutura do Repositório
+📋 Sobre o Projeto
 
-```
+O sistema foi desenvolvido para gerenciar o ciclo completo de atendimento de uma clínica médica: cadastro de pacientes e médicos, controle de convênios, agenda de horários e registro de consultas.
+
+O banco é composto por 6 tabelas que se relacionam entre si:
+
+
+convenio — planos de saúde parceiros (Unimed, Bradesco Saúde, SulAmérica, Amil)
+especialidade — especialidades médicas disponíveis na clínica (Cardiologia, Dermatologia, Ortopedia, entre outras)
+paciente — dados pessoais dos pacientes e vínculo com convênio
+medico — cadastro dos médicos, CRM, especialidade e valor de consulta
+agenda — dias da semana e horários disponíveis de cada médico
+consulta — tabela central do sistema, registra cada atendimento ligando paciente e médico, com status, motivo, diagnóstico e valor cobrado
+
+
+
+🗂️ Arquivos do Projeto
+
 clinica-bd/
 ├── README.md
 ├── modelagem/
-│   ├── der.png                   # Diagrama Entidade-Relacionamento
-│   ├── modelo_logico.png         # Modelo Lógico Relacional
-│   └── dicionario_dados.md       # Dicionário de dados
+│   ├── der.png                  # Diagrama Entidade-Relacionamento
+│   ├── modelo_logico.png        # Modelo Lógico Relacional
+│   └── dicionario_dados.md      # Dicionário de dados completo
 ├── scripts/
-│   ├── setup.sql                 # DDL: criação de todas as tabelas e índices
-│   └── dados_teste.sql           # Seed: dados fictícios para teste (100+ registros)
+│   ├── setup.sql                # Criação das tabelas, constraints e índices
+│   └── dados_teste.sql          # Dados fictícios para teste (100+ registros)
 ├── queries/
-│   └── consultas_avancadas.sql   # 5 consultas críticas do sistema
+│   └── consultas_avancadas.sql  # 5 consultas críticas do sistema
 └── justificativa/
-    └── arquitetura.md            # Justificativa da escolha tecnológica
-```
+    └── arquitetura.md           # Justificativa técnica detalhada
 
----
 
-## 🗄️ Tabelas do Banco
+🧠 Por que PostgreSQL?
 
-| Tabela | Descrição |
-|---|---|
-| `convenio` | Planos de saúde parceiros da clínica |
-| `especialidade` | Especialidades médicas disponíveis |
-| `paciente` | Dados pessoais dos pacientes |
-| `medico` | Cadastro dos médicos e seus valores de consulta |
-| `agenda` | Horários disponíveis de cada médico por dia da semana |
-| `consulta` | Registro de todos os atendimentos agendados e realizados |
-
----
-
-## ⚙️ Pré-requisitos
-
-Tenha instalado na máquina (WSL2 ou Linux):
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- `psql` (cliente PostgreSQL) — opcional, para rodar comandos manuais
-
-Verificar se o Docker está rodando:
-```bash
-docker --version
-docker ps
-```
-
----
-
-## 🚀 Como Executar (passo a passo)
-
-### Opção 1 — Via Docker Compose (junto com a aplicação)
-
-Se você estiver usando o projeto completo com `docker-compose.yml`, o banco já sobe automaticamente. Na raiz do projeto:
-
-```bash
-docker compose up -d --build
-```
-
-Aguarde o container `clinica_db` ficar saudável, depois rode os scripts:
-
-```bash
-# Criar as tabelas
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
-
-# Popular com dados de teste
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/dados_teste.sql
-```
-
----
-
-### Opção 2 — Apenas o banco (sem a aplicação)
-
-Sobe um container PostgreSQL isolado:
-
-```bash
-docker run -d \
-  --name clinica_db \
-  -e POSTGRES_USER=clinica_user \
-  -e POSTGRES_PASSWORD=clinica_pass \
-  -e POSTGRES_DB=clinica_db \
-  -v clinica_pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:15-alpine
-```
-
-Aguardar o banco inicializar (uns 5 segundos), depois executar os scripts:
-
-```bash
-# Criar as tabelas, constraints e índices
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
-
-# Inserir dados de teste
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/dados_teste.sql
-```
-
----
-
-## ✅ Verificando se tudo funcionou
-
-### Listar tabelas criadas
-```bash
-docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "\dt"
-```
+O modelo de dados é relacional por natureza
 
-Saída esperada:
-```
-          List of relations
- Schema |     Name     | Type  |    Owner
---------+--------------+-------+-------------
- public | agenda       | table | clinica_user
- public | consulta     | table | clinica_user
- public | convenio     | table | clinica_user
- public | especialidade| table | clinica_user
- public | medico       | table | clinica_user
- public | paciente     | table | clinica_user
-```
-
-### Contar registros inseridos
-```bash
-docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "
-SELECT 'convenio'     AS tabela, COUNT(*) AS registros FROM convenio
-UNION ALL
-SELECT 'especialidade', COUNT(*) FROM especialidade
-UNION ALL
-SELECT 'medico',        COUNT(*) FROM medico
-UNION ALL
-SELECT 'paciente',      COUNT(*) FROM paciente
-UNION ALL
-SELECT 'agenda',        COUNT(*) FROM agenda
-UNION ALL
-SELECT 'consulta',      COUNT(*) FROM consulta;
-"
-```
-
-Saída esperada:
-```
-    tabela     | registros
----------------+-----------
- convenio      |         5
- especialidade |         8
- medico        |        10
- paciente      |        40
- agenda        |        21
- consulta      |        60
-```
-
-### Listar índices criados
-```bash
-docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "\di"
-```
-
----
-
-## 🧪 Testando as Consultas Críticas
-
-As 5 consultas principais do sistema estão em `queries/consultas_avancadas.sql`. Para rodar todas de uma vez:
-
-```bash
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < queries/consultas_avancadas.sql
-```
-
-Ou rode uma por vez entrando no psql interativo:
-
-```bash
-docker exec -it clinica_db psql -U clinica_user -d clinica_db
-```
-
-Exemplo — histórico de um paciente pelo CPF:
-```sql
-SELECT c.data_consulta, m.nome AS medico, e.nome AS especialidade, c.motivo, c.diagnostico
-FROM consulta c
-JOIN medico m       ON m.id_medico       = c.id_medico
-JOIN especialidade e ON e.id_especialidade = m.id_especialidade
-WHERE c.id_paciente = (
-    SELECT id_paciente FROM paciente WHERE cpf = '001.002.003-04'
-)
-ORDER BY c.data_consulta DESC;
-```
-
----
-
-## 💾 Testando a Persistência dos Dados
-
-Reinicie o container e confirme que os dados continuam existindo (Named Volume garante isso):
-
-```bash
-# Reiniciar o banco
-docker restart clinica_db
-
-# Aguardar 3 segundos e verificar
-sleep 3
-docker exec -it clinica_db psql -U clinica_user -d clinica_db \
-  -c "SELECT COUNT(*) AS pacientes FROM paciente;"
-```
-
-Se retornar `40`, a persistência está funcionando corretamente.
-
----
-
-## 🔒 Segurança e Variáveis de Ambiente
-
-As credenciais do banco são gerenciadas via arquivo `.env`. **Nunca commite senhas reais no repositório.**
-
-Crie o arquivo `.env` baseado no exemplo:
-```bash
-cp .env.example .env
-```
-
-Conteúdo do `.env.example`:
-```env
-POSTGRES_USER=clinica_user
-POSTGRES_PASSWORD=sua_senha_aqui
-POSTGRES_DB=clinica_db
-DATABASE_URL=postgresql://clinica_user:sua_senha_aqui@db:5432/clinica_db
-```
-
-> ⚠️ O `.gitignore` já ignora o arquivo `.env`. Nunca remova essa linha.
-
----
-
-## 🔧 Troubleshooting
-
-**Erro: `could not connect to server`**
-```bash
-# Verificar se o container está rodando
-docker ps | grep clinica_db
-
-# Se não estiver, iniciar
-docker start clinica_db
-```
-
-**Erro: `FATAL: role "clinica_user" does not exist`**
-```bash
-docker exec -it clinica_db psql -U postgres -c \
-  "CREATE USER clinica_user WITH PASSWORD 'clinica_pass';"
-docker exec -it clinica_db psql -U postgres -c \
-  "CREATE DATABASE clinica_db OWNER clinica_user;"
-```
-
-**Erro: `port 5432 already in use`**
-```bash
-# Verificar o que está usando a porta
-sudo lsof -i :5432
-
-# Parar o PostgreSQL local se estiver rodando
-sudo service postgresql stop
-```
-
-**Tabelas não existem após subir o container**
-```bash
-# Rodar o setup novamente
-docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
-```
-
-**Dados não aparecem após reiniciar**
-```bash
-# Verificar se o volume existe
-docker volume ls | grep clinica_pgdata
-
-# Se não existir, recriar e rodar os scripts novamente
-```
-
----
-
-## 🧹 Limpeza de Recursos
-
-```bash
-# Parar e remover o container (mantém os dados no volume)
-docker stop clinica_db && docker rm clinica_db
-
-# Parar e remover tudo, incluindo os dados (CUIDADO — irreversível)
-docker stop clinica_db && docker rm clinica_db
-docker volume rm clinica_pgdata
-
-# Via Docker Compose (remove containers e volumes)
-docker compose down -v
-```
+Os dados da clínica possuem relacionamentos bem definidos e constantes: um paciente pertence a um convênio, um médico pertence a uma especialidade, uma consulta obrigatoriamente liga um paciente a um médico. Esse tipo de estrutura é exatamente o que bancos relacionais resolvem — os dados não existem de forma independente, eles dependem uns dos outros.
+
+Usar um banco NoSQL como MongoDB aqui não faria sentido técnico, pois os dados não são documentos isolados. Forçar esse modelo em documentos significaria duplicar informações (guardar os dados do médico dentro de cada consulta, por exemplo), o que geraria inconsistência e dificuldade de manutenção.
+
+Integridade garantida na camada de dados
+
+O PostgreSQL permite definir regras diretamente no banco, independente da aplicação. No projeto foram aplicados:
+
+
+Foreign Keys com ON DELETE SET NULL e ON DELETE CASCADE para garantir que nenhuma consulta fique órfã
+CHECK constraints com expressão regular para validar CPF (^\d{3}\.\d{3}\.\d{3}-\d{2}$) e CNPJ dos convênios direto no banco
+CHECK no status da consulta — o banco aceita apenas AGENDADA, REALIZADA, CANCELADA ou FALTA, rejeitando qualquer outro valor
+
+
+Isso significa que mesmo que a aplicação tenha um bug e tente gravar um dado inválido, o banco barra a operação e mantém a consistência dos dados.
+
+Recursos avançados utilizados
+
+O PostgreSQL oferece funcionalidades que foram usadas nas consultas críticas do sistema:
+
+
+FILTER (WHERE ...) dentro de agregações — permite contar e somar com condições diferentes numa única query, sem precisar de múltiplos SELECTs. Usado no relatório financeiro mensal para calcular total de realizadas, canceladas e faturamento ao mesmo tempo
+DATE_TRUNC('month', CURRENT_DATE) — para filtrar consultas do mês atual de forma precisa
+NULLIF(..., 0) — evita divisão por zero no cálculo de taxa de realização por especialidade
+Índices B-Tree otimizados nas colunas de busca mais frequentes: CPF do paciente, data da consulta, médico e status
+
+
+Por que não MySQL?
+
+MySQL também é relacional e seria funcional para este projeto. A escolha do PostgreSQL se justifica pelos recursos de agregação condicional com FILTER, pelo suporte mais robusto a expressões regulares nos CHECK constraints e pela integração direta com o ambiente Docker usado no projeto de infraestrutura, onde já utilizamos a imagem oficial postgres:15-alpine.
+
+
+📊 Dados de Teste
+
+O arquivo dados_teste.sql contém dados fictícios coerentes com o domínio da clínica:
+
+TabelaRegistrosConvênios5Especialidades8Médicos10Pacientes40Slots de agenda21Consultas60
+
+As consultas estão distribuídas entre janeiro e maio de 2025, com status variados (realizadas, canceladas, agendadas e faltas), permitindo testar todos os cenários das queries críticas
