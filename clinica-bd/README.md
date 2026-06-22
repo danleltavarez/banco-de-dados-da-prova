@@ -1,81 +1,137 @@
-🏥 Clínica Médica — Banco de Dados
+# 🏥 Clínica Médica — Banco de Dados
 
-Sistema de banco de dados relacional para gerenciamento de uma clínica médica, desenvolvido com PostgreSQL 15 como projeto da disciplina de Desenvolvimento Web — 2º Bimestre 2026.
+Sistema de banco de dados para gerenciamento de uma clínica médica, desenvolvido com **PostgreSQL 15**, como projeto da disciplina de Desenvolvimento Web — 2º Bimestre 2026.
 
+---
 
-📋 Sobre o Projeto
+## 📋 Sobre o Projeto
 
-O sistema foi desenvolvido para gerenciar o ciclo completo de atendimento de uma clínica médica: cadastro de pacientes e médicos, controle de convênios, agenda de horários e registro de consultas.
+O sistema foi desenvolvido para gerenciar o ciclo completo de atendimento de uma clínica médica, incluindo:
 
-O banco é composto por 6 tabelas que se relacionam entre si:
+- Cadastro de pacientes e médicos  
+- Controle de consultas  
+- Gestão de agenda de horários  
+- Registro completo dos atendimentos  
 
+O banco é composto por **6 tabelas principais**, relacionadas entre si:
 
-convenio — planos de saúde parceiros (Unimed, Bradesco Saúde, SulAmérica, Amil)
-especialidade — especialidades médicas disponíveis na clínica (Cardiologia, Dermatologia, Ortopedia, entre outras)
-paciente — dados pessoais dos pacientes e vínculo com convênio
-medico — cadastro dos médicos, CRM, especialidade e valor de consulta
-agenda — dias da semana e horários disponíveis de cada médico
-consulta — tabela central do sistema, registra cada atendimento ligando paciente e médico, com status, motivo, diagnóstico e valor cobrado
+- **convênio** — planos de saúde parceiros (Unimed, Bradesco Saúde, SulAmérica, Amil)  
+- **especialidade** — especialidades médicas (Cardiologia, Dermatologia, Ortopedia, etc.)  
+- **paciente** — dados pessoais e vínculo com convênio  
+- **médico** — cadastro de médicos, CRM, especialidade e valor de consulta  
+- **agenda** — dias da semana e horários disponíveis  
+- **consulta** — tabela central do sistema, registrando cada atendimento com paciente, médico, status, motivo, diagnóstico e valor cobrado  
 
+---
 
+## 🗂️ Arquivos do Projeto
 
-🗂️ Arquivos do Projeto
 
 clinica-bd/
 ├── README.md
 ├── modelagem/
-│   ├── der.png                  # Diagrama Entidade-Relacionamento
-│   ├── modelo_logico.png        # Modelo Lógico Relacional
-│   └── dicionario_dados.md      # Dicionário de dados completo
+│ ├── der.png # Diagrama Entidade-Relacionamento
+│ ├── modelo_logico.png # Modelo Lógico Relacional
+│ └── dicionario_dados.md # Dicionário de dados completos
 ├── scripts/
-│   ├── setup.sql                # Criação das tabelas, constraints e índices
-│   └── dados_teste.sql          # Dados fictícios para teste (100+ registros)
+│ ├── setup.sql # Criação das tabelas, restrições e índices
+│ └── dados_teste.sql # Dados fictícios para teste (100+ registros)
 ├── queries/
-│   └── consultas_avancadas.sql  # 5 consultas críticas do sistema
+│ └── consultas_avancadas.sql # Consultas avançadas do sistema
 └── justificativa/
-    └── arquitetura.md           # Justificativa técnica detalhada
+└── arquitetura.md # Justificativa técnica detalhada
 
 
-🧠 Por que PostgreSQL?
+---
 
-O modelo de dados é relacional por natureza
+## 🧠 Por que PostgreSQL?
 
-Os dados da clínica possuem relacionamentos bem definidos e constantes: um paciente pertence a um convênio, um médico pertence a uma especialidade, uma consulta obrigatoriamente liga um paciente a um médico. Esse tipo de estrutura é exatamente o que bancos relacionais resolvem — os dados não existem de forma independente, eles dependem uns dos outros.
+### 📌 Modelo de dados relacional por natureza
 
-Usar um banco NoSQL como MongoDB aqui não faria sentido técnico, pois os dados não são documentos isolados. Forçar esse modelo em documentos significaria duplicar informações (guardar os dados do médico dentro de cada consulta, por exemplo), o que geraria inconsistência e dificuldade de manutenção.
+O sistema foi modelado de forma totalmente relacional.
 
-Integridade garantida na camada de dados
+Os dados da clínica possuem relações bem definidas:
 
-O PostgreSQL permite definir regras diretamente no banco, independente da aplicação. No projeto foram aplicados:
+- Um paciente pertence a um convênio  
+- Um médico pertence a uma especialidade  
+- Uma consulta liga obrigatoriamente paciente e médico  
 
+Esse tipo de estrutura é ideal para bancos relacionais.
 
-Foreign Keys com ON DELETE SET NULL e ON DELETE CASCADE para garantir que nenhuma consulta fique órfã
-CHECK constraints com expressão regular para validar CPF (^\d{3}\.\d{3}\.\d{3}-\d{2}$) e CNPJ dos convênios direto no banco
-CHECK no status da consulta — o banco aceita apenas AGENDADA, REALIZADA, CANCELADA ou FALTA, rejeitando qualquer outro valor
+Usar um banco NoSQL (como MongoDB) exigiria duplicação de dados, como embutir informações de médico dentro de cada consulta, o que geraria inconsistência e dificuldade de manutenção.
 
+---
 
-Isso significa que mesmo que a aplicação tenha um bug e tente gravar um dado inválido, o banco barra a operação e mantém a consistência dos dados.
+### 🔐 Integridade garantida na camada de dados
 
-Recursos avançados utilizados
+O PostgreSQL permite aplicar regras diretamente no banco de dados, garantindo consistência mesmo em caso de falhas na aplicação:
 
-O PostgreSQL oferece funcionalidades que foram usadas nas consultas críticas do sistema:
+- **Foreign Keys**
+  - `ON DELETE SET NULL`
+  - `ON DELETE CASCADE`
+- **CHECK constraints**
+  - Validação de CPF com regex:  
+    `^\d{3}\.\d{3}\.\d{3}-\d{2}$`
+  - Validação de status da consulta:
+    - AGENDADA  
+    - REALIZADA  
+    - CANCELADA  
+    - FALTA  
 
+Isso garante que dados inválidos nunca sejam gravados.
 
-FILTER (WHERE ...) dentro de agregações — permite contar e somar com condições diferentes numa única query, sem precisar de múltiplos SELECTs. Usado no relatório financeiro mensal para calcular total de realizadas, canceladas e faturamento ao mesmo tempo
-DATE_TRUNC('month', CURRENT_DATE) — para filtrar consultas do mês atual de forma precisa
-NULLIF(..., 0) — evita divisão por zero no cálculo de taxa de realização por especialidade
-Índices B-Tree otimizados nas colunas de busca mais frequentes: CPF do paciente, data da consulta, médico e status
+---
 
+### ⚙️ Recursos avançados utilizados
 
-Por que não MySQL?
+Foram utilizados recursos avançados do PostgreSQL nas consultas:
 
-MySQL também é relacional e seria funcional para este projeto. A escolha do PostgreSQL se justifica pelos recursos de agregação condicional com FILTER, pelo suporte mais robusto a expressões regulares nos CHECK constraints e pela integração direta com o ambiente Docker usado no projeto de infraestrutura, onde já utilizamos a imagem oficial postgres:15-alpine.
+- **FILTER (WHERE ...)**  
+  Permite agregações condicionais em uma única query (ex: relatórios financeiros)
 
+- **DATE_TRUNC('month', CURRENT_DATE)**  
+  Filtragem precisa por mês atual
 
-📊 Dados de Teste
+- **NULLIF(..., 0)**  
+  Evita divisão por zero em cálculos de taxa
 
-O arquivo dados_teste.sql contém dados fictícios coerentes com o domínio da clínica:
+- **Índices B-Tree**  
+  Otimização de consultas em colunas frequentes:
+  - CPF do paciente  
+  - Médico  
+  - Status da consulta  
 
-TabelaRegistrosConvênios5Especialidades8Médicos10Pacientes40Slots de agenda21Consultas60
+---
 
-As consultas estão distribuídas entre janeiro e maio de 2025, com status variados (realizadas, canceladas, agendadas e faltas), permitindo testar todos os cenários das queries críticas
+### ❓ Por que não MySQL?
+
+O MySQL também seria funcional para este projeto, porém o PostgreSQL foi escolhido por:
+
+- Suporte mais avançado a **agregações com FILTER**
+- Melhor suporte a **expressões regulares em constraints**
+- Integração com ambiente **Docker (postgres:15-alpine)**
+- Maior robustez em validações e consultas analíticas
+
+---
+
+## 📊 Dados de Teste
+
+O arquivo `dados_teste.sql` contém dados fictícios consistentes com o domínio da clínica:
+
+| Entidade         | Quantidade |
+|------------------|------------|
+| Convênios        | 5          |
+| Especialidades   | 8          |
+| Médicos          | 10         |
+| Pacientes        | 40         |
+| Agenda           | 21         |
+| Consultas        | 60         |
+
+As consultas estão distribuídas entre **janeiro e maio de 2025**, com diferentes status:
+
+- Agendadas  
+- Realizadas  
+- Canceladas  
+- Faltas  
+
+Isso permite testar todos os cenários do sistema.
