@@ -135,3 +135,18 @@ As consultas estão distribuídas entre **janeiro e maio de 2025**, com diferent
 - Faltas  
 
 Isso permite testar todos os cenários do sistema.
+
+📌 Observação Importante (Apresentação)
+
+Conforme alinhado com o professor Gustavo, foi acordado que a apresentação será realizada executando o banco de dados localmente na máquina dos integrantes.
+
+O projeto foi inicialmente dividido em dois repositórios, sendo:
+
+Um repositório do banco de dados funcional
+Outro repositório para apresentação da modelagem e estrutura
+
+Essa divisão foi feita com o objetivo de facilitar a demonstração em sala de aula, mostrando:
+
+Como foi criada a base de dados
+A estrutura do banco
+E como o sistema funcionaria na prática durante a apresentação
