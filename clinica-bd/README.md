@@ -1,108 +1,208 @@
-# 🏥 Sistema de Clínica Médica — Banco de Dados
+# 🏥 Sistema de Banco de Dados para Clínica Médica
 
-Projeto de banco de dados relacional para gerenciamento de consultas em clínica médica.
+## 📋 Sobre o Projeto
 
-## 🗂️ Estrutura do Repositório
+Este projeto consiste na modelagem e implementação de um banco de dados relacional para gerenciamento de uma clínica médica.
 
-```
+O objetivo é armazenar e gerenciar informações relacionadas a pacientes, médicos, consultas, especialidades e demais processos envolvidos no funcionamento de uma clínica, garantindo organização, integridade e facilidade de consulta dos dados.
+
+O projeto foi desenvolvido como atividade acadêmica da disciplina de Banco de Dados, contemplando todas as etapas de modelagem e implementação.
+
+---
+
+## 🎯 Objetivos
+
+* Modelar um banco de dados para uma clínica médica.
+* Aplicar conceitos de modelagem conceitual e lógica.
+* Implementar tabelas, relacionamentos e restrições.
+* Popular o banco com dados de teste.
+* Criar consultas SQL para extração de informações relevantes.
+
+---
+
+## 📂 Estrutura do Projeto
+
+```text
+clinica-bd/
+│
 ├── README.md
+│
+├── apresentacao/
+│   └── clinica_apresentacao.html
+│
+├── consultas/
+│   └── consultas_avancadas.sql
+│
+├── documentacao/
+│   ├── arquitetura.md
+│   └── dicionario_dados.md
+│
 ├── modelagem/
-│   ├── dicionario_dados.md       ← Dicionário completo de todas as tabelas
-│   └── (der.png + modelo_logico.png — gerar via dbdiagram.io)
-├── scripts/
-│   ├── setup.sql                 ← DDL completo (CREATE TABLE + índices)
-│   └── seed/
-│       └── dados_teste.sql       ← 100+ registros fictícios para testes
-├── queries/
-│   └── consultas_avancadas.sql   ← 5 consultas críticas otimizadas
-└── justificativa/
-    └── arquitetura.md            ← Decisões técnicas justificadas
+│   ├── DER.png
+│   └── modelo_logico.png
+│
+└── scripts/
+    ├── setup.sql
+    └── dados_teste.sql
 ```
 
 ---
 
-## ⚙️ Tecnologia
+## 🗄️ Modelagem do Banco
 
-| Item | Escolha |
-|---|---|
-| Tipo | SQL Relacional |
-| SGBD | PostgreSQL 15+ |
-| Justificativa | Dados relacionais, integridade ACID, consultas complexas |
+### DER (Diagrama Entidade Relacionamento)
+
+O DER apresenta as entidades principais do sistema e seus relacionamentos.
+
+Principais entidades:
+
+* Paciente
+* Médico
+* Consulta
+* Especialidade
+* Convênio
+* Recepcionista
+
+O diagrama pode ser encontrado em:
+
+```text
+modelagem/DER.png
+```
+
+### Modelo Lógico
+
+O modelo lógico representa a implementação das entidades em tabelas relacionais, incluindo:
+
+* Chaves primárias (PK)
+* Chaves estrangeiras (FK)
+* Cardinalidades
+* Restrições de integridade
+
+Arquivo:
+
+```text
+modelagem/modelo_logico.png
+```
 
 ---
 
-## 🗃️ Entidades do Sistema
+## 🛠️ Tecnologias Utilizadas
 
-```
-convenio ──────────────────────────────────────────────────────┐
-                                                               │
-especialidade ─────────────┐                                   │
-                           ↓                                   ↓
-                         medico ──────── consulta ──────── paciente
-                           │
-                         agenda
-```
-
-| Tabela | Registros (seed) | Descrição |
-|---|---|---|
-| `convenio` | 5 | Planos de saúde aceitos |
-| `especialidade` | 8 | Especialidades médicas |
-| `medico` | 10 | Médicos da clínica |
-| `agenda` | 21 | Horários de atendimento |
-| `paciente` | 40 | Pacientes cadastrados |
-| `consulta` | 60+ | Consultas (jan–mai 2025) |
+* SQL
+* MySQL 8+
+* MySQL Workbench
+* Git
+* GitHub
 
 ---
 
-## 🚀 Como Executar
+## 🚀 Como Executar o Projeto
+
+### 1. Clonar o Repositório
 
 ```bash
-# 1. Criar o banco no PostgreSQL
-createdb clinica_db
+git clone https://github.com/danleltavarez/banco-de-dados-da-prova.git
+```
 
-# 2. Executar o DDL (tabelas + índices)
-psql -d clinica_db -f scripts/setup.sql
+### 2. Acessar a Pasta do Projeto
 
-# 3. Popular com dados de teste
-psql -d clinica_db -f scripts/seed/dados_teste.sql
+```bash
+cd banco-de-dados-da-prova/clinica-bd
+```
 
-# 4. Executar as consultas críticas
-psql -d clinica_db -f queries/consultas_avancadas.sql
+### 3. Criar o Banco de Dados
+
+Abra o arquivo:
+
+```text
+scripts/setup.sql
+```
+
+e execute-o no MySQL Workbench ou em outro cliente SQL compatível.
+
+Este script irá:
+
+* Criar o banco de dados.
+* Criar as tabelas.
+* Configurar as chaves primárias.
+* Configurar as chaves estrangeiras.
+* Aplicar as restrições de integridade.
+
+### 4. Inserir os Dados de Teste
+
+Execute o arquivo:
+
+```text
+scripts/dados_teste.sql
+```
+
+Este script irá popular o banco com registros de exemplo para testes e consultas.
+
+### 5. Executar Consultas
+
+As consultas avançadas estão disponíveis em:
+
+```text
+consultas/consultas_avancadas.sql
+```
+
+Essas consultas demonstram:
+
+* JOINs
+* Agregações
+* Filtros
+* Relatórios
+* Consultas complexas
+
+---
+
+## 📖 Documentação
+
+### Arquitetura
+
+Descrição geral da estrutura do banco de dados:
+
+```text
+documentacao/arquitetura.md
+```
+
+### Dicionário de Dados
+
+Descrição detalhada das tabelas, atributos e relacionamentos:
+
+```text
+documentacao/dicionario_dados.md
 ```
 
 ---
 
-## 📊 Consultas Críticas (resumo)
+## 📊 Funcionalidades Demonstradas
 
-| # | Consulta | Uso | Índices utilizados |
-|---|---|---|---|
-| 1 | Agenda do dia por médico | Recepção diária | `idx_consulta_medico`, `idx_consulta_data` |
-| 2 | Histórico do paciente por CPF | Atendimento médico | `idx_paciente_cpf`, `idx_consulta_paciente` |
-| 3 | Relatório financeiro mensal | Gestão financeira | `idx_consulta_data` |
-| 4 | Pacientes inativos (+6 meses) | Marketing/retenção | `idx_consulta_paciente`, `idx_consulta_data` |
-| 5 | Ranking de especialidades | Decisão estratégica | `idx_medico_especialidade` |
-
----
-
-## 📐 Normalização Aplicada
-
-- **1FN**: Atributos atômicos. Endereço dividido em logradouro, cidade, estado.
-- **2FN**: Todas as tabelas usam chave primária simples (SERIAL), sem dependências parciais.
-- **3FN**: Nome do convênio não repete em `paciente`; nome da especialidade não repete em `medico`. Buscados via FK.
+* Cadastro de pacientes
+* Cadastro de médicos
+* Controle de especialidades
+* Agendamento de consultas
+* Relacionamento entre pacientes e médicos
+* Consultas SQL avançadas
+* Geração de relatórios
 
 ---
 
-## 🔑 Índices
+## ✅ Conceitos Aplicados
 
-| Índice | Tabela | Campo | Tipo | Motivo |
-|---|---|---|---|---|
-| `idx_paciente_cpf` | `paciente` | `cpf` | B-Tree | Busca na recepção |
-| `idx_consulta_data` | `consulta` | `data_consulta` | B-Tree | Filtros de data |
-| `idx_consulta_status` | `consulta` | `status` | B-Tree | Filtro por status |
-| `idx_consulta_paciente` | `consulta` | `id_paciente` | B-Tree | Histórico do paciente |
-| `idx_consulta_medico` | `consulta` | `id_medico` | B-Tree | Agenda do médico |
-| `idx_medico_especialidade` | `medico` | `id_especialidade` | B-Tree | Busca por especialidade |
+* Modelagem Conceitual
+* Modelo Entidade Relacionamento (MER)
+* Modelo Lógico
+* Normalização
+* Integridade Referencial
+* Chaves Primárias e Estrangeiras
+* Consultas SQL Avançadas
+* Boas Práticas de Banco de Dados
 
-![alt text](image.png)
+---
 
-![alt text](image.png)
+## 👨‍💻 Autor
+
+Daniel Junior  Matheus Borali
+
+Projeto desenvolvido para fins acadêmicos na disciplina de Banco de Dados.
