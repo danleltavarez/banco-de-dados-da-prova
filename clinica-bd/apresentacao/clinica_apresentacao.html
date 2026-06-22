@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Clínica Médica — Diagrama do Banco de Dados</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #21262d;
+    --accent: #3fb950;
+    --accent2: #58a6ff;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --pk: #ffa657;
+    --fk: #58a6ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: all .2s;
+    margin-bottom: -1px;
+    background: transparent;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ─── DIAGRAMA ─── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+
+  svg.erd { display: block; margin: 0 auto; }
+
+  /* ─── TABELAS GRID ─── */
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .table-card:hover { border-color: #444c56; }
+
+  .table-header {
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-header .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .col-list { padding: 8px 0; }
+  .col-row {
+    display: grid;
+    grid-template-columns: 26px 1fr 90px 1fr;
+    gap: 0 8px;
+    padding: 5px 16px;
+    font-size: 12px;
+    align-items: center;
+    transition: background .15s;
+  }
+  .col-row:hover { background: rgba(255,255,255,.03); }
+  .col-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .5px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .col-key.pk { background: rgba(255,166,87,.15); color: var(--pk); }
+  .col-key.fk { background: rgba(88,166,255,.15); color: var(--fk); }
+  .col-name { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); }
+  .col-type { font-size: 11px; color: var(--accent4); font-family: 'DM Mono', monospace; }
+  .col-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
+
+  /* ─── ÍNDICES ─── */
+  .idx-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--surface);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .idx-table th {
+    background: #21262d;
+    padding: 10px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .idx-table td {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    vertical-align: middle;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  .idx-table tr:hover td { background: rgba(255,255,255,.02); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .badge-btree { background: rgba(63,185,80,.15); color: var(--accent); }
+
+  /* ─── CONSULTAS ─── */
+  .query-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .query-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .query-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(88,166,255,.15);
+    color: var(--accent2);
+    font-weight: 700;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+  .query-title { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .query-why { font-size: 12px; color: var(--muted); }
+  .query-body { padding: 16px 20px; display: none; }
+  .query-body.open { display: block; }
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    color: #c9d1d9;
+    white-space: pre;
+  }
+  .kw { color: #ff7b72; }
+  .fn { color: #d2a8ff; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .num { color: #ffa657; }
+</style>
+</head>
+<body>
+
+<h1>🏥 Sistema de Clínica Médica</h1>
+<p class="subtitle">PostgreSQL · SQL Relacional · Projeto 2º Bimestre</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('diagrama')">Diagrama</div>
+  <div class="tab" onclick="switchTab('tabelas')">Tabelas</div>
+  <div class="tab" onclick="switchTab('indices')">Índices</div>
+  <div class="tab" onclick="switchTab('consultas')">Consultas Críticas</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ DIAGRAMA -->
+<div class="panel active" id="tab-diagrama">
+  <div class="diagram-wrap">
+    <svg class="erd" width="860" height="560" viewBox="0 0 860 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#444c56"/>
+        </marker>
+      </defs>
+
+      <!-- LINES -->
+      <!-- convenio -> paciente -->
+      <line x1="140" y1="120" x2="310" y2="200" stroke="#444c56" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <!-- especialidade -> medico -->
+      <line x1="590" y1="120" x2="490" y2="200" stroke="#444c56" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <!-- medico -> agenda -->
+      <line x1="430" y1="310" x2="700" y2="350" stroke="#444c56" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,3"/>
+      <!-- paciente -> consulta -->
+      <line x1="360" y1="310" x2="430" y2="390" stroke="#444c56" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <!-- medico -> consulta -->
+      <line x1="430" y1="310" x2="430" y2="390" stroke="#444c56" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- CONVENIO -->
+      <g>
+        <rect x="20" y="30" width="240" height="110" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1.5"/>
+        <rect x="20" y="30" width="240" height="36" rx="8" fill="#1f2937"/>
+        <rect x="20" y="58" width="240" height="8" fill="#1f2937"/>
+        <text x="36" y="54" fill="#ffa657" font-family="DM Mono,monospace" font-size="13" font-weight="600">convenio</text>
+        <text x="36" y="84"  fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_convenio · SERIAL</text>
+        <text x="36" y="100" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   nome · VARCHAR</text>
+        <text x="36" y="116" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   cnpj · CHAR(18)</text>
+        <text x="36" y="132" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   ativo · BOOLEAN</text>
+      </g>
+
+      <!-- ESPECIALIDADE -->
+      <g>
+        <rect x="600" y="30" width="240" height="96" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1.5"/>
+        <rect x="600" y="30" width="240" height="36" rx="8" fill="#1f2937"/>
+        <rect x="600" y="58" width="240" height="8" fill="#1f2937"/>
+        <text x="616" y="54" fill="#ffa657" font-family="DM Mono,monospace" font-size="13" font-weight="600">especialidade</text>
+        <text x="616" y="84"  fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_especialidade · SERIAL</text>
+        <text x="616" y="100" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   nome · VARCHAR</text>
+        <text x="616" y="116" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   descricao · TEXT</text>
+      </g>
+
+      <!-- PACIENTE -->
+      <g>
+        <rect x="200" y="170" width="240" height="160" rx="8" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+        <rect x="200" y="170" width="240" height="36" rx="8" fill="#0d2116"/>
+        <rect x="200" y="198" width="240" height="8" fill="#0d2116"/>
+        <text x="216" y="194" fill="#3fb950" font-family="DM Mono,monospace" font-size="13" font-weight="600">paciente</text>
+        <text x="216" y="224" fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_paciente · SERIAL</text>
+        <text x="216" y="240" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   nome · VARCHAR</text>
+        <text x="216" y="256" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   cpf · CHAR(14)</text>
+        <text x="216" y="272" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   data_nascimento · DATE</text>
+        <text x="216" y="288" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   sexo · CHAR(1)</text>
+        <text x="216" y="304" fill="#58a6ff" font-family="DM Mono,monospace" font-size="11">🔗 id_convenio · FK</text>
+      </g>
+
+      <!-- MEDICO -->
+      <g>
+        <rect x="380" y="170" width="240" height="160" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <rect x="380" y="170" width="240" height="36" rx="8" fill="#0d1729"/>
+        <rect x="380" y="198" width="240" height="8" fill="#0d1729"/>
+        <text x="396" y="194" fill="#58a6ff" font-family="DM Mono,monospace" font-size="13" font-weight="600">medico</text>
+        <text x="396" y="224" fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_medico · SERIAL</text>
+        <text x="396" y="240" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   nome · VARCHAR</text>
+        <text x="396" y="256" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   crm · VARCHAR</text>
+        <text x="396" y="272" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   valor_consulta · NUMERIC</text>
+        <text x="396" y="288" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   ativo · BOOLEAN</text>
+        <text x="396" y="304" fill="#58a6ff" font-family="DM Mono,monospace" font-size="11">🔗 id_especialidade · FK</text>
+      </g>
+
+      <!-- AGENDA -->
+      <g>
+        <rect x="620" y="330" width="220" height="130" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1.5"/>
+        <rect x="620" y="330" width="220" height="36" rx="8" fill="#1f2937"/>
+        <rect x="620" y="358" width="220" height="8" fill="#1f2937"/>
+        <text x="636" y="354" fill="#d2a8ff" font-family="DM Mono,monospace" font-size="13" font-weight="600">agenda</text>
+        <text x="636" y="384" fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_agenda · SERIAL</text>
+        <text x="636" y="400" fill="#58a6ff" font-family="DM Mono,monospace" font-size="11">🔗 id_medico · FK</text>
+        <text x="636" y="416" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   dia_semana · SMALLINT</text>
+        <text x="636" y="432" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   hora_inicio · TIME</text>
+        <text x="636" y="448" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   hora_fim · TIME</text>
+      </g>
+
+      <!-- CONSULTA -->
+      <g>
+        <rect x="280" y="395" width="280" height="150" rx="8" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+        <rect x="280" y="395" width="280" height="36" rx="8" fill="#1f1410"/>
+        <rect x="280" y="423" width="280" height="8" fill="#1f1410"/>
+        <text x="296" y="419" fill="#f78166" font-family="DM Mono,monospace" font-size="13" font-weight="600">consulta</text>
+        <text x="296" y="449" fill="#e6edf3" font-family="DM Mono,monospace" font-size="11">🔑 id_consulta · SERIAL</text>
+        <text x="296" y="465" fill="#58a6ff" font-family="DM Mono,monospace" font-size="11">🔗 id_paciente · FK</text>
+        <text x="296" y="481" fill="#58a6ff" font-family="DM Mono,monospace" font-size="11">🔗 id_medico · FK</text>
+        <text x="296" y="497" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   data_consulta · TIMESTAMP</text>
+        <text x="296" y="513" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   status · VARCHAR</text>
+        <text x="296" y="529" fill="#8b949e" font-family="DM Mono,monospace" font-size="11">   valor_cobrado · NUMERIC</text>
+      </g>
+
+      <!-- LEGEND -->
+      <g transform="translate(20,490)">
+        <text fill="#8b949e" font-family="DM Sans,sans-serif" font-size="11">🔑 PK — Chave Primária</text>
+        <text x="180" fill="#8b949e" font-family="DM Sans,sans-serif" font-size="11">🔗 FK — Chave Estrangeira</text>
+        <line x1="340" y1="5" x2="370" y2="5" stroke="#444c56" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="376" fill="#8b949e" font-family="DM Sans,sans-serif" font-size="11">Relação opcional</text>
+        <line x1="490" y1="5" x2="520" y2="5" stroke="#444c56" stroke-width="1.5"/>
+        <text x="526" fill="#8b949e" font-family="DM Sans,sans-serif" font-size="11">Relação obrigatória</text>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ TABELAS -->
+<div class="panel" id="tab-tabelas">
+  <div class="tables-grid" id="tables-grid"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ ÍNDICES -->
+<div class="panel" id="tab-indices">
+  <table class="idx-table">
+    <thead>
+      <tr>
+        <th>Nome do Índice</th>
+        <th>Tabela</th>
+        <th>Campo</th>
+        <th>Tipo</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody id="idx-body"></tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════ CONSULTAS -->
+<div class="panel" id="tab-consultas">
+  <div id="queries-list"></div>
+</div>
+
+<script>
+const TABLES = [
+  {
+    name: 'convenio', color: '#ffa657',
+    cols: [
+      { key:'PK', name:'id_convenio', type:'SERIAL', desc:'Identificador único' },
+      { key:'',   name:'nome',        type:'VARCHAR(100)', desc:'Nome do plano' },
+      { key:'',   name:'cnpj',        type:'CHAR(18)', desc:'CNPJ único' },
+      { key:'',   name:'telefone',    type:'VARCHAR(20)', desc:'Contato' },
+      { key:'',   name:'ativo',       type:'BOOLEAN', desc:'Convênio ativo?' },
+    ]
+  },
+  {
+    name: 'especialidade', color: '#ffa657',
+    cols: [
+      { key:'PK', name:'id_especialidade', type:'SERIAL', desc:'Identificador único' },
+      { key:'',   name:'nome',             type:'VARCHAR(100)', desc:'Nome único' },
+      { key:'',   name:'descricao',        type:'TEXT', desc:'Descrição detalhada' },
+    ]
+  },
+  {
+    name: 'paciente', color: '#3fb950',
+    cols: [
+      { key:'PK', name:'id_paciente',     type:'SERIAL',    desc:'Identificador único' },
+      { key:'',   name:'nome',            type:'VARCHAR(150)',desc:'Nome completo' },
+      { key:'',   name:'cpf',             type:'CHAR(14)',   desc:'CPF único' },
+      { key:'',   name:'data_nascimento', type:'DATE',       desc:'Data de nascimento' },
+      { key:'',   name:'sexo',            type:'CHAR(1)',    desc:'M/F/O' },
+      { key:'',   name:'telefone',        type:'VARCHAR(20)',desc:'Contato' },
+      { key:'',   name:'email',           type:'VARCHAR(150)',desc:'Email' },
+      { key:'',   name:'logradouro',      type:'VARCHAR(200)',desc:'Endereço' },
+      { key:'',   name:'cidade',          type:'VARCHAR(100)',desc:'Cidade' },
+      { key:'',   name:'estado',          type:'CHAR(2)',    desc:'UF' },
+      { key:'FK', name:'id_convenio',     type:'INT',        desc:'→ convenio (nullable)' },
+      { key:'',   name:'data_cadastro',   type:'TIMESTAMP',  desc:'Cadastro no sistema' },
+    ]
+  },
+  {
+    name: 'medico', color: '#58a6ff',
+    cols: [
+      { key:'PK', name:'id_medico',        type:'SERIAL',     desc:'Identificador único' },
+      { key:'',   name:'nome',             type:'VARCHAR(150)',desc:'Nome completo' },
+      { key:'',   name:'crm',              type:'VARCHAR(20)', desc:'CRM único' },
+      { key:'',   name:'cpf',              type:'CHAR(14)',    desc:'CPF único' },
+      { key:'',   name:'telefone',         type:'VARCHAR(20)', desc:'Contato' },
+      { key:'',   name:'email',            type:'VARCHAR(150)',desc:'Email' },
+      { key:'FK', name:'id_especialidade', type:'INT',         desc:'→ especialidade' },
+      { key:'',   name:'valor_consulta',   type:'NUMERIC(10,2)',desc:'Valor cobrado' },
+      { key:'',   name:'ativo',            type:'BOOLEAN',     desc:'Médico ativo?' },
+    ]
+  },
+  {
+    name: 'agenda', color: '#d2a8ff',
+    cols: [
+      { key:'PK', name:'id_agenda',   type:'SERIAL',   desc:'Identificador único' },
+      { key:'FK', name:'id_medico',   type:'INT',       desc:'→ medico' },
+      { key:'',   name:'dia_semana',  type:'SMALLINT',  desc:'0=Dom … 6=Sáb' },
+      { key:'',   name:'hora_inicio', type:'TIME',      desc:'Início do expediente' },
+      { key:'',   name:'hora_fim',    type:'TIME',      desc:'Fim do expediente' },
+    ]
+  },
+  {
+    name: 'consulta', color: '#f78166',
+    cols: [
+      { key:'PK', name:'id_consulta',      type:'SERIAL',      desc:'Identificador único' },
+      { key:'FK', name:'id_paciente',      type:'INT',          desc:'→ paciente' },
+      { key:'FK', name:'id_medico',        type:'INT',          desc:'→ medico' },
+      { key:'',   name:'data_consulta',    type:'TIMESTAMP',    desc:'Data e hora' },
+      { key:'',   name:'status',           type:'VARCHAR(20)',   desc:'AGENDADA/REALIZADA/…' },
+      { key:'',   name:'motivo',           type:'TEXT',          desc:'Motivo relatado' },
+      { key:'',   name:'diagnostico',      type:'TEXT',          desc:'Diagnóstico médico' },
+      { key:'',   name:'valor_cobrado',    type:'NUMERIC(10,2)', desc:'Valor cobrado' },
+      { key:'',   name:'coberto_convenio', type:'BOOLEAN',       desc:'Coberto pelo plano?' },
+      { key:'',   name:'data_criacao',     type:'TIMESTAMP',     desc:'Registro no sistema' },
+    ]
+  },
+];
+
+const INDICES = [
+  { name:'idx_paciente_cpf',        table:'paciente',  field:'cpf',              type:'B-Tree', why:'Busca rápida na recepção pelo CPF do paciente' },
+  { name:'idx_consulta_data',       table:'consulta',  field:'data_consulta',    type:'B-Tree', why:'Filtros por data — agenda do dia, relatórios mensais' },
+  { name:'idx_consulta_status',     table:'consulta',  field:'status',           type:'B-Tree', why:'Filtrar consultas por AGENDADA, REALIZADA, CANCELADA' },
+  { name:'idx_consulta_paciente',   table:'consulta',  field:'id_paciente',      type:'B-Tree', why:'Buscar histórico de um paciente específico' },
+  { name:'idx_consulta_medico',     table:'consulta',  field:'id_medico',        type:'B-Tree', why:'Buscar agenda de um médico específico' },
+  { name:'idx_medico_especialidade',table:'medico',    field:'id_especialidade', type:'B-Tree', why:'Listar médicos por área de atuação' },
+];
+
+const QUERIES = [
+  {
+    num: 1,
+    title: 'Agenda do dia — por médico',
+    why: 'Principal consulta da recepção. Executada várias vezes ao dia. Usa 2 índices.',
+    sql: `<span class="cmt">-- Agenda do dia para um médico específico</span>
+<span class="kw">SELECT</span>
+    c.data_consulta::<span class="fn">TIME</span>           <span class="kw">AS</span> horario,
+    p.nome                         <span class="kw">AS</span> paciente,
+    p.telefone,
+    c.motivo,
+    c.status,
+    <span class="fn">COALESCE</span>(cv.nome, <span class="str">'Particular'</span>) <span class="kw">AS</span> convenio
+<span class="kw">FROM</span> consulta c
+<span class="kw">JOIN</span> paciente p  <span class="kw">ON</span> p.id_paciente = c.id_paciente
+<span class="kw">LEFT JOIN</span> convenio cv <span class="kw">ON</span> cv.id_convenio = p.id_convenio
+<span class="kw">WHERE</span> c.id_medico = <span class="num">1</span>
+  <span class="kw">AND</span> c.data_consulta::<span class="fn">DATE</span> = <span class="fn">CURRENT_DATE</span>
+<span class="kw">ORDER BY</span> c.data_consulta;`
+  },
+  {
+    num: 2,
+    title: 'Histórico completo do paciente (por CPF)',
+    why: 'Médico precisa ver todo o histórico antes de atender. JOIN em 3 tabelas.',
+    sql: `<span class="cmt">-- Histórico de consultas de um paciente pelo CPF</span>
+<span class="kw">SELECT</span>
+    c.data_consulta,
+    m.nome           <span class="kw">AS</span> medico,
+    e.nome           <span class="kw">AS</span> especialidade,
+    c.motivo,
+    c.diagnostico,
+    c.status,
+    c.valor_cobrado
+<span class="kw">FROM</span> consulta c
+<span class="kw">JOIN</span> medico m       <span class="kw">ON</span> m.id_medico         = c.id_medico
+<span class="kw">JOIN</span> especialidade e <span class="kw">ON</span> e.id_especialidade  = m.id_especialidade
+<span class="kw">WHERE</span> c.id_paciente = (
+    <span class="kw">SELECT</span> id_paciente <span class="kw">FROM</span> paciente
+    <span class="kw">WHERE</span> cpf = <span class="str">'001.002.003-04'</span>
+)
+<span class="kw">ORDER BY</span> c.data_consulta <span class="kw">DESC</span>;`
+  },
+  {
+    num: 3,
+    title: 'Relatório financeiro mensal por médico',
+    why: 'Controle financeiro da clínica. Usa GROUP BY, FILTER e DATE_TRUNC.',
+    sql: `<span class="cmt">-- Faturamento do mês corrente por médico</span>
+<span class="kw">SELECT</span>
+    m.nome                                           <span class="kw">AS</span> medico,
+    e.nome                                           <span class="kw">AS</span> especialidade,
+    <span class="fn">COUNT</span>(*)                                        <span class="kw">AS</span> total_consultas,
+    <span class="fn">COUNT</span>(*) <span class="kw">FILTER</span> (<span class="kw">WHERE</span> c.status = <span class="str">'REALIZADA'</span>) <span class="kw">AS</span> realizadas,
+    <span class="fn">SUM</span>(c.valor_cobrado)
+        <span class="kw">FILTER</span> (<span class="kw">WHERE</span> c.status = <span class="str">'REALIZADA'</span>)         <span class="kw">AS</span> faturamento,
+    <span class="fn">AVG</span>(c.valor_cobrado)
+        <span class="kw">FILTER</span> (<span class="kw">WHERE</span> c.status = <span class="str">'REALIZADA'</span>)         <span class="kw">AS</span> ticket_medio
+<span class="kw">FROM</span> consulta c
+<span class="kw">JOIN</span> medico m       <span class="kw">ON</span> m.id_medico         = c.id_medico
+<span class="kw">JOIN</span> especialidade e <span class="kw">ON</span> e.id_especialidade  = m.id_especialidade
+<span class="kw">WHERE</span> c.data_consulta >= <span class="fn">DATE_TRUNC</span>(<span class="str">'month'</span>, <span class="fn">CURRENT_DATE</span>)
+  <span class="kw">AND</span> c.data_consulta <  <span class="fn">DATE_TRUNC</span>(<span class="str">'month'</span>, <span class="fn">CURRENT_DATE</span>) + <span class="fn">INTERVAL</span> <span class="str">'1 month'</span>
+<span class="kw">GROUP BY</span> m.id_medico, m.nome, e.nome
+<span class="kw">ORDER BY</span> faturamento <span class="kw">DESC NULLS LAST</span>;`
+  },
+  {
+    num: 4,
+    title: 'Pacientes inativos (sem consulta há +6 meses)',
+    why: 'Estratégia de reativação de pacientes. Usa HAVING + MAX sobre data.',
+    sql: `<span class="cmt">-- Pacientes sem consulta realizada há mais de 6 meses</span>
+<span class="kw">SELECT</span>
+    p.nome,
+    p.cpf,
+    p.telefone,
+    p.email,
+    <span class="fn">MAX</span>(c.data_consulta)::<span class="fn">DATE</span>          <span class="kw">AS</span> ultima_consulta,
+    <span class="fn">COALESCE</span>(cv.nome, <span class="str">'Particular'</span>)    <span class="kw">AS</span> convenio
+<span class="kw">FROM</span> paciente p
+<span class="kw">JOIN</span> consulta c     <span class="kw">ON</span> c.id_paciente   = p.id_paciente
+<span class="kw">LEFT JOIN</span> convenio cv <span class="kw">ON</span> cv.id_convenio = p.id_convenio
+<span class="kw">WHERE</span> c.status = <span class="str">'REALIZADA'</span>
+<span class="kw">GROUP BY</span> p.id_paciente, p.nome, p.cpf, p.telefone, p.email, cv.nome
+<span class="kw">HAVING</span> <span class="fn">MAX</span>(c.data_consulta) < <span class="fn">CURRENT_DATE</span> - <span class="fn">INTERVAL</span> <span class="str">'6 months'</span>
+<span class="kw">ORDER BY</span> ultima_consulta <span class="kw">ASC</span>;`
+  },
+  {
+    num: 5,
+    title: 'Ranking de especialidades por receita',
+    why: 'Auxilia a gestão a decidir contratações. Múltiplos JOINs + taxa de realização.',
+    sql: `<span class="cmt">-- Desempenho por especialidade com taxa de realização</span>
+<span class="kw">SELECT</span>
+    e.nome                                                   <span class="kw">AS</span> especialidade,
+    <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> m.id_medico)                           <span class="kw">AS</span> qtd_medicos,
+    <span class="fn">COUNT</span>(c.id_consulta)                                    <span class="kw">AS</span> total_agendamentos,
+    <span class="fn">ROUND</span>(
+        <span class="num">100.0</span> * <span class="fn">COUNT</span>(c.id_consulta) <span class="kw">FILTER</span> (<span class="kw">WHERE</span> c.status=<span class="str">'REALIZADA'</span>)
+        / <span class="fn">NULLIF</span>(<span class="fn">COUNT</span>(c.id_consulta), <span class="num">0</span>), <span class="num">1</span>
+    )                                                        <span class="kw">AS</span> taxa_realizacao_pct,
+    <span class="fn">SUM</span>(c.valor_cobrado) <span class="kw">FILTER</span>(<span class="kw">WHERE</span> c.status=<span class="str">'REALIZADA'</span>)  <span class="kw">AS</span> receita_total
+<span class="kw">FROM</span> especialidade e
+<span class="kw">LEFT JOIN</span> medico m    <span class="kw">ON</span> m.id_especialidade = e.id_especialidade <span class="kw">AND</span> m.ativo = <span class="kw">TRUE</span>
+<span class="kw">LEFT JOIN</span> consulta c  <span class="kw">ON</span> c.id_medico = m.id_medico
+<span class="kw">GROUP BY</span> e.id_especialidade, e.nome
+<span class="kw">ORDER BY</span> receita_total <span class="kw">DESC NULLS LAST</span>;`
+  },
+];
+
+// Render tables
+const grid = document.getElementById('tables-grid');
+TABLES.forEach(t => {
+  const card = document.createElement('div');
+  card.className = 'table-card';
+  card.innerHTML = `
+    <div class="table-header">
+      <span class="dot" style="background:${t.color}"></span>
+      <span style="font-family:DM Mono,monospace;font-size:13px;font-weight:600;color:${t.color}">${t.name}</span>
+      <span style="margin-left:auto;font-size:11px;color:#7d8590">${t.cols.length} colunas</span>
+    </div>
+    <div class="col-list">
+      ${t.cols.map(c => `
+        <div class="col-row">
+          <span class="col-key ${c.key.toLowerCase()}">${c.key}</span>
+          <span class="col-name">${c.name}</span>
+          <span class="col-type">${c.type}</span>
+          <span class="col-desc">${c.desc}</span>
+        </div>
+      `).join('')}
+    </div>`;
+  grid.appendChild(card);
+});
+
+// Render indices
+const idxBody = document.getElementById('idx-body');
+INDICES.forEach(i => {
+  idxBody.innerHTML += `
+    <tr>
+      <td style="color:#e6edf3">${i.name}</td>
+      <td style="color:#ffa657">${i.table}</td>
+      <td style="color:#3fb950">${i.field}</td>
+      <td><span class="badge badge-btree">${i.type}</span></td>
+      <td style="color:#7d8590;font-family:DM Sans,sans-serif;font-size:12px">${i.why}</td>
+    </tr>`;
+});
+
+// Render queries
+const qList = document.getElementById('queries-list');
+QUERIES.forEach(q => {
+  const div = document.createElement('div');
+  div.className = 'query-card';
+  div.innerHTML = `
+    <div class="query-header" onclick="toggleQuery(this)">
+      <div class="query-num">${q.num}</div>
+      <div>
+        <div class="query-title">${q.title}</div>
+        <div class="query-why">${q.why}</div>
+      </div>
+      <span style="margin-left:auto;color:#7d8590;font-size:18px">▸</span>
+    </div>
+    <div class="query-body">
+      <pre>${q.sql}</pre>
+    </div>`;
+  qList.appendChild(div);
+});
+
+function toggleQuery(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('span:last-child');
+  body.classList.toggle('open');
+  arrow.textContent = body.classList.contains('open') ? '▾' : '▸';
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['diagrama','tabelas','indices','consultas'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + id);
+  });
+}
+</script>
+</body>
+</html>
