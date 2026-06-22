@@ -1,183 +1,284 @@
-# 🏥 Sistema de Banco de Dados para Clínica Médica
+# 🏥 Clínica Médica — Banco de Dados
 
-## 📖 Descrição do Projeto
-
-Este projeto apresenta o desenvolvimento de um banco de dados relacional para uma clínica médica, utilizando PostgreSQL. O sistema foi projetado para armazenar e gerenciar informações relacionadas a pacientes, médicos, consultas e demais processos administrativos da clínica.
-
-O trabalho contempla todas as etapas de modelagem de banco de dados, desde a criação do Diagrama Entidade-Relacionamento (DER) até a implementação física e a elaboração de consultas avançadas para análise dos dados.
+> Banco de dados relacional para sistema de gerenciamento de clínica médica.
+> Desenvolvido com **PostgreSQL 15**, rodando via **Docker**.
 
 ---
 
-## 🎯 Objetivos
+## 📁 Estrutura do Repositório
 
-- Aplicar conceitos de modelagem de banco de dados;
-- Desenvolver um banco de dados relacional utilizando PostgreSQL;
-- Garantir a integridade e consistência dos dados;
-- Implementar relacionamentos entre entidades;
-- Criar consultas SQL para extração e análise de informações;
-- Demonstrar boas práticas de modelagem e documentação.
-
----
-
-## 📂 Estrutura do Projeto
-
-```text
+```
 clinica-bd/
-│
 ├── README.md
-│
-├── apresentacao/
-│   └── clinica_apresentacao.html
-│
-├── consultas/
-│   └── consultas_avancadas.sql
-│
-├── documentacao/
-│   ├── arquitetura.md
-│   └── dicionario_dados.md
-│
 ├── modelagem/
-│   ├── DER.png
-│   └── modelo_logico.png
-│
-└── scripts/
-    ├── setup.sql
-    └── dados_teste.sql
+│   ├── der.png                   # Diagrama Entidade-Relacionamento
+│   ├── modelo_logico.png         # Modelo Lógico Relacional
+│   └── dicionario_dados.md       # Dicionário de dados
+├── scripts/
+│   ├── setup.sql                 # DDL: criação de todas as tabelas e índices
+│   └── dados_teste.sql           # Seed: dados fictícios para teste (100+ registros)
+├── queries/
+│   └── consultas_avancadas.sql   # 5 consultas críticas do sistema
+└── justificativa/
+    └── arquitetura.md            # Justificativa da escolha tecnológica
 ```
 
 ---
 
-## 🏗️ Modelagem do Banco de Dados
+## 🗄️ Tabelas do Banco
 
-### Diagrama Entidade-Relacionamento (DER)
-
-O DER representa visualmente as entidades do sistema e seus relacionamentos, servindo como base para a implementação do banco de dados.
-
-**Arquivo:** `modelagem/DER.png`
-
-### Modelo Lógico
-
-O modelo lógico apresenta a estrutura das tabelas, atributos, chaves primárias e estrangeiras, além das regras de relacionamento entre as entidades.
-
-**Arquivo:** `modelagem/modelo_logico.png`
+| Tabela | Descrição |
+|---|---|
+| `convenio` | Planos de saúde parceiros da clínica |
+| `especialidade` | Especialidades médicas disponíveis |
+| `paciente` | Dados pessoais dos pacientes |
+| `medico` | Cadastro dos médicos e seus valores de consulta |
+| `agenda` | Horários disponíveis de cada médico por dia da semana |
+| `consulta` | Registro de todos os atendimentos agendados e realizados |
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## ⚙️ Pré-requisitos
 
-- PostgreSQL
-- SQL
-- Git
-- GitHub
-- pgAdmin 4
+Tenha instalado na máquina (WSL2 ou Linux):
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- `psql` (cliente PostgreSQL) — opcional, para rodar comandos manuais
+
+Verificar se o Docker está rodando:
+```bash
+docker --version
+docker ps
+```
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como Executar (passo a passo)
 
-### 1. Clonar o Repositório
+### Opção 1 — Via Docker Compose (junto com a aplicação)
+
+Se você estiver usando o projeto completo com `docker-compose.yml`, o banco já sobe automaticamente. Na raiz do projeto:
 
 ```bash
-git clone https://github.com/danleltavarez/banco-de-dados-da-prova.git
-cd banco-de-dados-da-prova/clinica-bd
+docker compose up -d --build
 ```
 
-### 2. Criar o Banco de Dados
+Aguarde o container `clinica_db` ficar saudável, depois rode os scripts:
 
-No PostgreSQL, execute:
+```bash
+# Criar as tabelas
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
 
+# Popular com dados de teste
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/dados_teste.sql
+```
+
+---
+
+### Opção 2 — Apenas o banco (sem a aplicação)
+
+Sobe um container PostgreSQL isolado:
+
+```bash
+docker run -d \
+  --name clinica_db \
+  -e POSTGRES_USER=clinica_user \
+  -e POSTGRES_PASSWORD=clinica_pass \
+  -e POSTGRES_DB=clinica_db \
+  -v clinica_pgdata:/var/lib/postgresql/data \
+  -p 5432:5432 \
+  postgres:15-alpine
+```
+
+Aguardar o banco inicializar (uns 5 segundos), depois executar os scripts:
+
+```bash
+# Criar as tabelas, constraints e índices
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
+
+# Inserir dados de teste
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/dados_teste.sql
+```
+
+---
+
+## ✅ Verificando se tudo funcionou
+
+### Listar tabelas criadas
+```bash
+docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "\dt"
+```
+
+Saída esperada:
+```
+          List of relations
+ Schema |     Name     | Type  |    Owner
+--------+--------------+-------+-------------
+ public | agenda       | table | clinica_user
+ public | consulta     | table | clinica_user
+ public | convenio     | table | clinica_user
+ public | especialidade| table | clinica_user
+ public | medico       | table | clinica_user
+ public | paciente     | table | clinica_user
+```
+
+### Contar registros inseridos
+```bash
+docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "
+SELECT 'convenio'     AS tabela, COUNT(*) AS registros FROM convenio
+UNION ALL
+SELECT 'especialidade', COUNT(*) FROM especialidade
+UNION ALL
+SELECT 'medico',        COUNT(*) FROM medico
+UNION ALL
+SELECT 'paciente',      COUNT(*) FROM paciente
+UNION ALL
+SELECT 'agenda',        COUNT(*) FROM agenda
+UNION ALL
+SELECT 'consulta',      COUNT(*) FROM consulta;
+"
+```
+
+Saída esperada:
+```
+    tabela     | registros
+---------------+-----------
+ convenio      |         5
+ especialidade |         8
+ medico        |        10
+ paciente      |        40
+ agenda        |        21
+ consulta      |        60
+```
+
+### Listar índices criados
+```bash
+docker exec -it clinica_db psql -U clinica_user -d clinica_db -c "\di"
+```
+
+---
+
+## 🧪 Testando as Consultas Críticas
+
+As 5 consultas principais do sistema estão em `queries/consultas_avancadas.sql`. Para rodar todas de uma vez:
+
+```bash
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < queries/consultas_avancadas.sql
+```
+
+Ou rode uma por vez entrando no psql interativo:
+
+```bash
+docker exec -it clinica_db psql -U clinica_user -d clinica_db
+```
+
+Exemplo — histórico de um paciente pelo CPF:
 ```sql
-CREATE DATABASE clinica;
+SELECT c.data_consulta, m.nome AS medico, e.nome AS especialidade, c.motivo, c.diagnostico
+FROM consulta c
+JOIN medico m       ON m.id_medico       = c.id_medico
+JOIN especialidade e ON e.id_especialidade = m.id_especialidade
+WHERE c.id_paciente = (
+    SELECT id_paciente FROM paciente WHERE cpf = '001.002.003-04'
+)
+ORDER BY c.data_consulta DESC;
 ```
-
-### 3. Executar o Script de Estrutura
-
-Abra e execute o arquivo:
-
-```text
-scripts/setup.sql
-```
-
-Esse script criará:
-
-- Tabelas;
-- Relacionamentos;
-- Chaves primárias;
-- Chaves estrangeiras;
-- Restrições de integridade.
-
-### 4. Inserir os Dados de Teste
-
-Execute o arquivo:
-
-```text
-scripts/dados_teste.sql
-```
-
-Esse script adicionará registros para testes e validação do banco.
-
-### 5. Executar as Consultas
-
-As consultas SQL desenvolvidas para o projeto estão disponíveis em:
-
-```text
-consultas/consultas_avancadas.sql
-```
-
-Essas consultas demonstram:
-
-- JOINs;
-- Agrupamentos;
-- Filtros;
-- Ordenações;
-- Relatórios;
-- Consultas avançadas.
 
 ---
 
-## 📚 Documentação
+## 💾 Testando a Persistência dos Dados
 
-### Arquitetura
+Reinicie o container e confirme que os dados continuam existindo (Named Volume garante isso):
 
-Descrição da organização do banco de dados, suas entidades e relacionamentos.
+```bash
+# Reiniciar o banco
+docker restart clinica_db
 
-**Arquivo:** `documentacao/arquitetura.md`
+# Aguardar 3 segundos e verificar
+sleep 3
+docker exec -it clinica_db psql -U clinica_user -d clinica_db \
+  -c "SELECT COUNT(*) AS pacientes FROM paciente;"
+```
 
-### Dicionário de Dados
-
-Contém a descrição detalhada das tabelas, atributos e tipos de dados utilizados no projeto.
-
-**Arquivo:** `documentacao/dicionario_dados.md`
-
----
-
-## 🔍 Funcionalidades Demonstradas
-
-- Cadastro de pacientes;
-- Cadastro de médicos;
-- Gerenciamento de consultas;
-- Controle de relacionamentos entre entidades;
-- Armazenamento estruturado de informações;
-- Consultas para análise e extração de dados;
-- Aplicação de integridade referencial.
+Se retornar `40`, a persistência está funcionando corretamente.
 
 ---
 
-## 📈 Conceitos Aplicados
+## 🔒 Segurança e Variáveis de Ambiente
 
-- Modelo Entidade-Relacionamento (MER);
-- Modelo Lógico Relacional;
-- Normalização de Dados;
-- Chaves Primárias e Estrangeiras;
-- Integridade Referencial;
-- Consultas SQL;
-- PostgreSQL;
-- Versionamento com Git e GitHub.
+As credenciais do banco são gerenciadas via arquivo `.env`. **Nunca commite senhas reais no repositório.**
+
+Crie o arquivo `.env` baseado no exemplo:
+```bash
+cp .env.example .env
+```
+
+Conteúdo do `.env.example`:
+```env
+POSTGRES_USER=clinica_user
+POSTGRES_PASSWORD=sua_senha_aqui
+POSTGRES_DB=clinica_db
+DATABASE_URL=postgresql://clinica_user:sua_senha_aqui@db:5432/clinica_db
+```
+
+> ⚠️ O `.gitignore` já ignora o arquivo `.env`. Nunca remova essa linha.
 
 ---
 
-## 👨‍💻 Autor
+## 🔧 Troubleshooting
 
-**Daniel Junior**   **Matheus Borali**
+**Erro: `could not connect to server`**
+```bash
+# Verificar se o container está rodando
+docker ps | grep clinica_db
 
-Projeto acadêmico desenvolvido para a disciplina de Banco de Dados, com foco na modelagem, implementação e manipulação de dados utilizando PostgreSQL.
+# Se não estiver, iniciar
+docker start clinica_db
+```
+
+**Erro: `FATAL: role "clinica_user" does not exist`**
+```bash
+docker exec -it clinica_db psql -U postgres -c \
+  "CREATE USER clinica_user WITH PASSWORD 'clinica_pass';"
+docker exec -it clinica_db psql -U postgres -c \
+  "CREATE DATABASE clinica_db OWNER clinica_user;"
+```
+
+**Erro: `port 5432 already in use`**
+```bash
+# Verificar o que está usando a porta
+sudo lsof -i :5432
+
+# Parar o PostgreSQL local se estiver rodando
+sudo service postgresql stop
+```
+
+**Tabelas não existem após subir o container**
+```bash
+# Rodar o setup novamente
+docker exec -i clinica_db psql -U clinica_user -d clinica_db < scripts/setup.sql
+```
+
+**Dados não aparecem após reiniciar**
+```bash
+# Verificar se o volume existe
+docker volume ls | grep clinica_pgdata
+
+# Se não existir, recriar e rodar os scripts novamente
+```
+
+---
+
+## 🧹 Limpeza de Recursos
+
+```bash
+# Parar e remover o container (mantém os dados no volume)
+docker stop clinica_db && docker rm clinica_db
+
+# Parar e remover tudo, incluindo os dados (CUIDADO — irreversível)
+docker stop clinica_db && docker rm clinica_db
+docker volume rm clinica_pgdata
+
+# Via Docker Compose (remove containers e volumes)
+docker compose down -v
+```
